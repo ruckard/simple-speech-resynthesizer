@@ -10,7 +10,7 @@ Resynthesises natural voice from videos onto computer-generated voice thanks to 
 - python3 pyttsx3 module
 - mbrola voices (Optional but recommended)
 - ffmpeg
-- openshot
+- openshot-qt
 - unzip
 - 4 GB RAM
 - ( Originally installed in Ubuntu 22.04. )
