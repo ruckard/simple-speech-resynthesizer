@@ -20,6 +20,16 @@ Resynthesises natural voice from videos onto computer-generated voice thanks to 
 sudo apt install python3 python3-pip ffmpeg openshot unzip mbrola
 sudo pip3 install vosk pyttsx3
 ```
+
+### OpenShot UI not working on Ubuntu 22.04 workaround
+Openshot was not working on Ubuntu 22.04 on 2022-05-28.
+You might not need this workaround after all.
+```bash
+sudo add-apt-repository ppa:openshot.developers/libopenshot-daily
+sudo apt update
+sudo apt install openshot-qt python3-openshot
+```
+
 ### Mbrola voices (optional)
 #### Mbrola English voices
 ```bash
