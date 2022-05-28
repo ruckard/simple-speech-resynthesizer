@@ -7,6 +7,7 @@ import subprocess
 import json
 import argparse
 import pyttsx3
+import importlib
 from collections import namedtuple
 from pprint import pprint
 try:
@@ -149,20 +150,40 @@ def create_parser():
         help=("The pitch to use for playing back.\n" "Defaults to 50."),
         required=False,
     )
+
+    parser.add_argument(
+        "--respeech-tmp-dir",
+        dest="respeech_tmp_dir",
+        default="/tmp",
+        type=str,
+        help=(
+            "Default temporary directory.\n"
+        ),
+        required=False,
+    )
     if tqdm_installed:
         parser.add_argument("-p", "--progress", action="store_true")
     parser.add_argument("input")
     return parser
 
+def respeech_engine_init (respeech_rate, respeech_voice, respeech_volume, respeech_pitch):
+    importlib.reload(pyttsx3) # Workaround to be avoid pyttsx3 being stuck
+    respeech_engine = pyttsx3.init()
+    respeech_engine.setProperty('rate', respeech_rate)
+    respeech_engine.setProperty('voice', respeech_voice)
+    respeech_engine.setProperty('volume', respeech_volume)
+    respeech_engine.setProperty('pitch', respeech_pitch) # Default: 50
+    return respeech_engine
 
 def main():
     args = create_parser().parse_args()
 
-    respeech_engine = pyttsx3.init()
-    respeech_engine.setProperty('rate', args.respeech_rate)
-    respeech_engine.setProperty('voice', args.respeech_voice)
-    respeech_engine.setProperty('volume', args.respeech_voice)
-    respeech_engine.setProperty('pitch', args.respeech_pitch) # Default: 50
+    wav_directory = args.respeech_tmp_dir + os.path.basename(args.input) + ".waws.d"
+    try:
+        os.makedirs(wav_directory)
+    except FileExistsError:
+        pass
+    print(wav_directory)
 
     if tqdm_installed:
         it = enumerate(gen_subparts(args.input, args.model, args.verbose, args.interval, args.progress))
@@ -175,7 +196,10 @@ def main():
 
 """
 )
-        respeech_engine.say(subpart.getText())
+        respeech_text = subpart.getText()
+        respeech_wav_filename = wav_directory + '/' + str(n)+'.wav'
+        respeech_engine = respeech_engine_init(args.respeech_rate, args.respeech_voice, args.respeech_volume, args.respeech_pitch)
+        respeech_engine.save_to_file(respeech_text, respeech_wav_filename)
         respeech_engine.runAndWait()
 
 
