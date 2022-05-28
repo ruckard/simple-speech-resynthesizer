@@ -49,8 +49,8 @@ unzip vosk-model-small-en-us-0.15.zip
 cd
 mkdir vosk-models
 cd vosk-models
-wget 'https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip'
-unzip vosk-model-en-us-0.22.zip
+wget 'https://alphacephei.com/vosk/models/vosk-model-small-es-0.22.zip'
+unzip vosk-model-small-es-0.22.zip
 ```
 
 ## Installation
