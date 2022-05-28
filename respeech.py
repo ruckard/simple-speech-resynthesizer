@@ -6,6 +6,7 @@ import os
 import subprocess
 import json
 import argparse
+import pyttsx3
 from collections import namedtuple
 from pprint import pprint
 try:
@@ -35,9 +36,12 @@ class SubPart:
 {self.ftot(self.start)} --> {self.ftot(self.end)}
 {self.text}
 """[1:-1]
+    def getText(self):
+        return self.text
 
 
 def gen_subparts(input_file, model_dir, verbose=False, partlen=4, progress=False):
+
     SetLogLevel(0 if verbose else -1)
 
     model = Model(model_dir)
@@ -108,8 +112,8 @@ def create_parser():
     parser.add_argument("-m", "--model", required=True)
     parser.add_argument("-i", "--interval", type=int, default=4)
     parser.add_argument(
-        "--reread-rate",
-        dest="reread_rate",
+        "--respeech-rate",
+        dest="respeech_rate",
         default=80,
         type=int,
         help=("The sample rate to use for playing back.\n" "Defaults to 80."),
@@ -117,8 +121,8 @@ def create_parser():
     )
 
     parser.add_argument(
-        "--reread-voice",
-        dest="reread_voice",
+        "--respeech-voice",
+        dest="respeech_voice",
         default="us1",
         type=str,
         help=(
@@ -129,8 +133,8 @@ def create_parser():
     )
 
     parser.add_argument(
-        "--reread-volume",
-        dest="reread_volume",
+        "--respeech-volume",
+        dest="respeech_volume",
         default=1,
         type=int,
         help=("The volume to use for playing back.\n" "Defaults to 1 (which means 100%)."),
@@ -138,8 +142,8 @@ def create_parser():
     )
 
     parser.add_argument(
-        "--reread-pitch",
-        dest="reread_pitch",
+        "--respeech-pitch",
+        dest="respeech_pitch",
         default=50,
         type=int,
         help=("The pitch to use for playing back.\n" "Defaults to 50."),
@@ -153,6 +157,13 @@ def create_parser():
 
 def main():
     args = create_parser().parse_args()
+
+    respeech_engine = pyttsx3.init()
+    respeech_engine.setProperty('rate', args.respeech_rate)
+    respeech_engine.setProperty('voice', args.respeech_voice)
+    respeech_engine.setProperty('volume', args.respeech_voice)
+    respeech_engine.setProperty('pitch', args.respeech_pitch) # Default: 50
+
     if tqdm_installed:
         it = enumerate(gen_subparts(args.input, args.model, args.verbose, args.interval, args.progress))
     else:
@@ -164,6 +175,8 @@ def main():
 
 """
 )
+        respeech_engine.say(subpart.getText())
+        respeech_engine.runAndWait()
 
 
 
