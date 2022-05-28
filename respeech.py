@@ -107,6 +107,44 @@ def create_parser():
     parser.add_argument("-o", "--output", type=argparse.FileType('w+'), default=sys.stdout)
     parser.add_argument("-m", "--model", required=True)
     parser.add_argument("-i", "--interval", type=int, default=4)
+    parser.add_argument(
+        "--reread-rate",
+        dest="reread_rate",
+        default=80,
+        type=int,
+        help=("The sample rate to use for playing back.\n" "Defaults to 80."),
+        required=False,
+    )
+
+    parser.add_argument(
+        "--reread-voice",
+        dest="reread_voice",
+        default="us1",
+        type=str,
+        help=(
+            "The name of the voice to use for playing back.\n"
+            'See the output of "espeak-ng --voices=en" or "espeak-ng --voices=es" to find voices names (using the identifier following "File:").'
+        ),
+        required=False,
+    )
+
+    parser.add_argument(
+        "--reread-volume",
+        dest="reread_volume",
+        default=1,
+        type=int,
+        help=("The volume to use for playing back.\n" "Defaults to 1 (which means 100%)."),
+        required=False,
+    )
+
+    parser.add_argument(
+        "--reread-pitch",
+        dest="reread_pitch",
+        default=50,
+        type=int,
+        help=("The pitch to use for playing back.\n" "Defaults to 50."),
+        required=False,
+    )
     if tqdm_installed:
         parser.add_argument("-p", "--progress", action="store_true")
     parser.add_argument("input")
