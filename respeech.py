@@ -39,6 +39,10 @@ class SubPart:
 """[1:-1]
     def getText(self):
         return self.text
+    def getStart(self):
+        return self.start
+    def getEnd(self):
+        return self.end
 
 
 def gen_subparts(input_file, duration, model_dir, verbose=False, partlen=4, progress=False):
@@ -195,12 +199,14 @@ def main():
     except FileExistsError:
         pass
 
-    create_silence_file (duration, wav_directory)
 
     if tqdm_installed:
         it = enumerate(gen_subparts(args.input, duration, args.model, args.verbose, args.interval, args.progress))
     else:
         it = enumerate(gen_subparts(args.input, duration, args.model, args.verbose, args.interval, False))
+
+    last_subpart_end = 0
+    maximum_silence_duration = 0
     for i,subpart in it:
         n = i+1
         args.output.write(f"""{n}
@@ -213,6 +219,14 @@ def main():
         respeech_engine = respeech_engine_init(args.respeech_rate, args.respeech_voice, args.respeech_volume, args.respeech_pitch)
         respeech_engine.save_to_file(respeech_text, respeech_wav_filename)
         respeech_engine.runAndWait()
+
+        current_silence_duration = subpart.getStart() - last_subpart_end
+        if (current_silence_duration >= maximum_silence_duration):
+            maximum_silence_duration = current_silence_duration
+
+        last_subpart_end = subpart.getEnd()
+
+    create_silence_file (maximum_silence_duration, wav_directory)
 
 
 
