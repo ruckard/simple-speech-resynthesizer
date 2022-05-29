@@ -187,7 +187,11 @@ def create_silence_file (duration, silence_wav):
                                 '-ar', str(22050) , '-ac', '1', silence_wav],
                                 stdout=subprocess.PIPE)
 
-#ffmpeg -f lavfi -t 1 -i anullsrc=channel_layout=stereo:sample_rate=44100 -i audio.oga -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" output.m4a
+def create_concatenated_wav(ffmpeg_concat_configuration_file, ffmpeg_concat_wav_file):
+    process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-safe', '0', '-f', 'concat', '-i',
+                                ffmpeg_concat_configuration_file,
+                                '-codec', 'copy' , ffmpeg_concat_wav_file],
+                                stdout=subprocess.PIPE)
 
 def main():
     args = create_parser().parse_args()
@@ -242,6 +246,8 @@ file {respeech_wav_filename}
 
     create_silence_file (maximum_silence_duration, silence_wav)
 
+    f_ffmpeg_concat_configuration_file.flush()
+    create_concatenated_wav(ffmpeg_concat_configuration_file, ffmpeg_concat_wav_file)
 
 
 if __name__ == "__main__":
