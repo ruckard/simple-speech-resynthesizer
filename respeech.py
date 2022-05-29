@@ -179,8 +179,8 @@ def get_duration (input_file):
 
 def create_silence_file (duration, wav_directory):
     process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-f', 'lavfi', '-t', str(duration), '-i',
-                                'anullsrc=channel_layout=stereo:sample_rate=22050',
-                                '-ar', str(16000) , '-ac', '1', '-f', 's16le', '-c:a', 'mp3', wav_directory + '/' + 'silence.mp3'],
+                                'anullsrc=channel_layout=mono:sample_rate=22050',
+                                '-ar', str(22050) , '-ac', '1', wav_directory + '/' + 'silence.wav'],
                                 stdout=subprocess.PIPE)
 
 #ffmpeg -f lavfi -t 1 -i anullsrc=channel_layout=stereo:sample_rate=44100 -i audio.oga -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" output.m4a
