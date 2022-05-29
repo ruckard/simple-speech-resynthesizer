@@ -181,10 +181,10 @@ def get_duration (input_file):
     duration = float(r.stdout.decode('utf-8').strip())
     return duration
 
-def create_silence_file (duration, wav_directory):
+def create_silence_file (duration, silence_wav):
     process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-f', 'lavfi', '-t', str(duration), '-i',
                                 'anullsrc=channel_layout=mono:sample_rate=22050',
-                                '-ar', str(22050) , '-ac', '1', wav_directory + '/' + 'silence.wav'],
+                                '-ar', str(22050) , '-ac', '1', silence_wav],
                                 stdout=subprocess.PIPE)
 
 #ffmpeg -f lavfi -t 1 -i anullsrc=channel_layout=stereo:sample_rate=44100 -i audio.oga -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" output.m4a
@@ -199,6 +199,10 @@ def main():
     except FileExistsError:
         pass
 
+    ffmpeg_concat_configuration_file = wav_directory + '/' + "ffmpeg_concat.conf"
+    ffmpeg_concat_wav_file = wav_directory + '/' + "ffmpeg_concat.wav"
+    silence_wav = wav_directory + '/' + 'silence.wav'
+    f_ffmpeg_concat_configuration_file = open(ffmpeg_concat_configuration_file, 'w')
 
     if tqdm_installed:
         it = enumerate(gen_subparts(args.input, duration, args.model, args.verbose, args.interval, args.progress))
@@ -214,6 +218,8 @@ def main():
 
 """
 )
+        silence_start = last_subpart_end
+
         respeech_text = subpart.getText()
         respeech_wav_filename = wav_directory + '/' + str(n)+'.wav'
         respeech_engine = respeech_engine_init(args.respeech_rate, args.respeech_voice, args.respeech_volume, args.respeech_pitch)
@@ -224,9 +230,17 @@ def main():
         if (current_silence_duration >= maximum_silence_duration):
             maximum_silence_duration = current_silence_duration
 
+        f_ffmpeg_concat_configuration_file.write(f"""file {silence_wav}
+outpoint {current_silence_duration}
+
+file {respeech_wav_filename}
+
+"""
+)
+
         last_subpart_end = subpart.getEnd()
 
-    create_silence_file (maximum_silence_duration, wav_directory)
+    create_silence_file (maximum_silence_duration, silence_wav)
 
 
 
