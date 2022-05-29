@@ -41,7 +41,7 @@ class SubPart:
         return self.text
 
 
-def gen_subparts(input_file, model_dir, verbose=False, partlen=4, progress=False):
+def gen_subparts(input_file, duration, model_dir, verbose=False, partlen=4, progress=False):
 
     SetLogLevel(0 if verbose else -1)
 
@@ -53,9 +53,6 @@ def gen_subparts(input_file, model_dir, verbose=False, partlen=4, progress=False
                                 input_file,
                                 '-ar', str(16000) , '-ac', '1', '-f', 's16le', '-'],
                                 stdout=subprocess.PIPE)
-
-    r = subprocess.run("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1".split() + [input_file], stdout=subprocess.PIPE)
-    duration = float(r.stdout.decode('utf-8').strip())
 
     if progress:
         pbar = tqdm(total=duration, unit="s")
@@ -175,20 +172,35 @@ def respeech_engine_init (respeech_rate, respeech_voice, respeech_volume, respee
     respeech_engine.setProperty('pitch', respeech_pitch) # Default: 50
     return respeech_engine
 
+def get_duration (input_file):
+    r = subprocess.run("ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1".split() + [input_file], stdout=subprocess.PIPE)
+    duration = float(r.stdout.decode('utf-8').strip())
+    return duration
+
+def create_silence_file (duration, wav_directory):
+    process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-f', 'lavfi', '-t', str(duration), '-i',
+                                'anullsrc=channel_layout=stereo:sample_rate=22050',
+                                '-ar', str(16000) , '-ac', '1', '-f', 's16le', '-c:a', 'mp3', wav_directory + '/' + 'silence.mp3'],
+                                stdout=subprocess.PIPE)
+
+#ffmpeg -f lavfi -t 1 -i anullsrc=channel_layout=stereo:sample_rate=44100 -i audio.oga -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" output.m4a
+
 def main():
     args = create_parser().parse_args()
+    duration = get_duration(args.input)
 
     wav_directory = args.respeech_tmp_dir + os.path.basename(args.input) + ".waws.d"
     try:
         os.makedirs(wav_directory)
     except FileExistsError:
         pass
-    print(wav_directory)
+
+    create_silence_file (duration, wav_directory)
 
     if tqdm_installed:
-        it = enumerate(gen_subparts(args.input, args.model, args.verbose, args.interval, args.progress))
+        it = enumerate(gen_subparts(args.input, duration, args.model, args.verbose, args.interval, args.progress))
     else:
-        it = enumerate(gen_subparts(args.input, args.model, args.verbose, args.interval, False))
+        it = enumerate(gen_subparts(args.input, duration, args.model, args.verbose, args.interval, False))
     for i,subpart in it:
         n = i+1
         args.output.write(f"""{n}
