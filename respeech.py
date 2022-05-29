@@ -8,6 +8,9 @@ import json
 import argparse
 import pyttsx3
 import importlib
+import tempfile
+import shutil
+import time
 from collections import namedtuple
 from pprint import pprint
 try:
@@ -222,6 +225,7 @@ def main():
 
     last_subpart_end = 0
     maximum_silence_duration = 0
+    tmp_respeech_wav_directory = tempfile.mkdtemp()
     for i,subpart in it:
         n = i+1
         args.srt_output.write(f"""{n}
@@ -233,9 +237,20 @@ def main():
 
         respeech_text = subpart.getText()
         respeech_wav_filename = wav_directory + '/' + str(n)+'.wav'
+        tmp_respeech_wav_filename = tmp_respeech_wav_directory + '/' + 'tmpwavefile' +'.wav'
+        # Make sure to delete the temporary wav filename
+        if os.path.exists(tmp_respeech_wav_filename):
+            os.remove(tmp_respeech_wav_filename)
         respeech_engine = respeech_engine_init(args.respeech_rate, args.respeech_voice, args.respeech_volume, args.respeech_pitch)
-        respeech_engine.save_to_file(respeech_text, respeech_wav_filename)
+        respeech_engine.save_to_file(respeech_text, tmp_respeech_wav_filename)
         respeech_engine.runAndWait()
+        # So that we can wait for the actual runAndWait()
+        while not os.path.exists(tmp_respeech_wav_filename):
+            time.sleep(0.1)
+        time.sleep(0.1)
+        # shutil is a workaround because save_to_file function from pyttsx3 engine does not seem to handle
+        # filepaths with spaces on them
+        shutil.copyfile(tmp_respeech_wav_filename, respeech_wav_filename)
 
         current_silence_duration = subpart.getStart() - last_subpart_end
         if (current_silence_duration >= maximum_silence_duration):
