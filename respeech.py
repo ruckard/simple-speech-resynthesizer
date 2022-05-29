@@ -110,7 +110,8 @@ def gen_subparts(input_file, duration, model_dir, verbose=False, partlen=4, prog
 def create_parser():
     parser = argparse.ArgumentParser(prog="SRT file extractor using Speech-To-Text")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("-o", "--output", type=argparse.FileType('w+'), default=sys.stdout)
+    parser.add_argument("-s", "--srt-output", type=argparse.FileType('w+'), default=sys.stdout)
+    parser.add_argument("-o", "--output", type=str)
     parser.add_argument("-m", "--model", required=True)
     parser.add_argument("-i", "--interval", type=int, default=4)
     parser.add_argument(
@@ -182,15 +183,21 @@ def get_duration (input_file):
     return duration
 
 def create_silence_file (duration, silence_wav):
-    process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-f', 'lavfi', '-t', str(duration), '-i',
+    process = subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-y', '-f', 'lavfi', '-t', str(duration), '-i',
                                 'anullsrc=channel_layout=mono:sample_rate=22050',
                                 '-ar', str(22050) , '-ac', '1', silence_wav],
                                 stdout=subprocess.PIPE)
 
 def create_concatenated_wav(ffmpeg_concat_configuration_file, ffmpeg_concat_wav_file):
-    process = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-y', '-safe', '0', '-f', 'concat', '-i',
+    process = subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-y', '-safe', '0', '-f', 'concat', '-i',
                                 ffmpeg_concat_configuration_file,
                                 '-codec', 'copy' , ffmpeg_concat_wav_file],
+                                stdout=subprocess.PIPE)
+
+def create_final_video(input_video, input_audio, output_video, audio_format):
+    process = subprocess.call(['ffmpeg', '-loglevel', 'quiet', '-y', '-i',
+                                input_video, '-i', input_audio, '-c:v', 'copy', '-c:a', audio_format, '-map', '0:v:0', '-map', '1:a:0',
+                                output_video],
                                 stdout=subprocess.PIPE)
 
 def main():
@@ -217,7 +224,7 @@ def main():
     maximum_silence_duration = 0
     for i,subpart in it:
         n = i+1
-        args.output.write(f"""{n}
+        args.srt_output.write(f"""{n}
 {subpart}
 
 """
@@ -248,6 +255,7 @@ file {respeech_wav_filename}
 
     f_ffmpeg_concat_configuration_file.flush()
     create_concatenated_wav(ffmpeg_concat_configuration_file, ffmpeg_concat_wav_file)
+    create_final_video(args.input, ffmpeg_concat_wav_file, args.output, 'aac')
 
 
 if __name__ == "__main__":
